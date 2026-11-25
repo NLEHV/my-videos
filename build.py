@@ -110,9 +110,45 @@ def fetch_videos(channel_id):
     return videos
 
 
+def find_all(data, key, found):
+    """Searches YouTube's page data for every item called `key`."""
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if k == key:
+                found.append(v)
+            find_all(v, key, found)
+    elif isinstance(data, list):
+        for item in data:
+            find_all(item, key, found)
+    return found
+
+
+def fetch_playlists(channel_id):
+    """Reads the playlists shown on the channel's 'Playlists' tab."""
+    page = download(f"https://www.youtube.com/channel/{channel_id}/playlists")
+    start = page.find("{", page.find("ytInitialData"))
+    data = json.JSONDecoder().raw_decode(page[start:])[0]
+
+    playlists = []
+    for item in find_all(data, "lockupViewModel", []):
+        if "PLAYLIST" not in item.get("contentType", "") and "SHOW" not in item.get("contentType", ""):
+            continue
+        text = json.dumps(item)
+        count = re.search(r'"text": "([\d,.]+\s+(?:videos?|episodes?|lessons?))"', text)
+        thumb = re.search(r'"url": "(https://i\.ytimg\.com/[^"]+)"', text)
+        playlists.append({
+            "id": item["contentId"],
+            "title": item["metadata"]["lockupMetadataViewModel"]["title"]["content"],
+            "count": count.group(1) if count else "",
+            "thumb": thumb.group(1) if thumb else "",
+        })
+    return playlists
+
+
 def main():
     cache = json.loads(CACHE_FILE.read_text()) if CACHE_FILE.exists() else {}
     all_videos = []
+    all_playlists = {}   # channel name -> list of playlists
     problems = []
 
     for entry in read_channel_list():
@@ -120,16 +156,28 @@ def main():
             channel_id = find_channel_id(entry, cache)
             videos = fetch_videos(channel_id)
             all_videos.extend(videos)
-            print(f"OK   {entry}: {len(videos)} videos")
         except Exception as error:
             problems.append(entry)
             print(f"FAIL {entry}: {error}")
+            continue
+
+        # Playlists are a bonus: if they fail, the videos still show.
+        playlist_note = ""
+        if videos:
+            try:
+                all_playlists[videos[0]["channel"]] = fetch_playlists(channel_id)
+                playlist_note = f", {len(all_playlists[videos[0]['channel']])} playlists"
+            except Exception as error:
+                playlist_note = f", playlists failed ({error})"
+        print(f"OK   {entry}: {len(videos)} videos{playlist_note}")
 
     CACHE_FILE.write_text(json.dumps(cache, indent=2) + "\n")
 
     all_videos.sort(key=lambda v: v["published"], reverse=True)
     template = (HERE / "template.html").read_text()
-    page = template.replace("__VIDEOS__", json.dumps(all_videos).replace("</", "<\\/"))
+    page = (template
+            .replace("__VIDEOS__", json.dumps(all_videos).replace("</", "<\\/"))
+            .replace("__PLAYLISTS__", json.dumps(all_playlists).replace("</", "<\\/")))
     OUTPUT_DIR.mkdir(exist_ok=True)
     (OUTPUT_DIR / "index.html").write_text(page)
     print(f"\nBuilt page with {len(all_videos)} videos.")
