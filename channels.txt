@@ -1,0 +1,39 @@
+# Your allowed channels: one per line.
+# Paste a channel link, an @handle, or a channel ID. The part after # is just a note.
+
+UCJuvMjmY4-KFrBJXx-5aRKQ  # 100XClub
+UCUyDOdBWhC1MCxEjC46d-zw  # Alex Hormozi
+UCGy7SkBjcIAgTiwkXEtPnYg  # Andrei Jikh
+UC2D2CMWXMOVWx7giW1n3LIg  # Andrew Huberman
+UCGnTHU6UMQQlR6cl4CP3jlg  # Apesthetic
+UCFeFVytEkT8kaqPCJZGFswg  # Austin Marchese
+UCtPdiTVqTkg3t3PjQZqOaCA  # Bald Guy Money
+UCRvqjQPSeaWn-uEx-w0XOIg  # Benjamin Cowen
+UCOHxDwCcOzBaLkeTazanwcw  # Bravos Research
+UC9jTdAaVgvRjhU0gl5LWoZg  # Bravos Research Extras
+UCr_DLep7UQ0B_IFhvTORu8A  # Camel Finance
+UC634L9eG-YsskyzWxnp9BJA  # Conor Harris
+UC9Mq8PDBT2cFf5mj7_fQTgg  # Crypto Currently
+UC6LhgxDUdbb6jsgET6iAVAA  # Dan Krupka
+UCIgdMadtFZtXER3tcNcuQkQ  # Daniel McEvoy
+UCZdlbfB69vYNj5B4gYGU37Q  # Dave Scott
+UCJEhmDQZGsu9vUlpvmyzadw  # Deciphering Crypto
+UCNq_7yqJLcynGMAsi6m9odA  # Dream Crypto
+UCXuajBBk_lhdQH3FRQfd5GA  # Finance Stack
+UCwTu6kD2igaLMpxswtcdxlg  # Gareth Soloway
+UCjG_4Kg7ZWWs8o7EnfnDc9Q  # iGold Advisor
+UCrpFW99zAUaJT8cKmqeagkg  # Jason Lewis - Mind Amend
+UCIb34uXDsfTq4PJKW0eztkA  # Jason Pizzino
+UCw4_-IVRDtkGZkwUmsv1S2A  # Joe Consorti
+UC6Dnuzr4uJhfU5mcSm3pJgw  # KingCobraTrades
+UCRMfiHDOFhm9gmMLR47dDXw  # Kon How
+UCz2wzs4KacqHth7R_N5grgA  # Michael Pizzino
+UCP2MS8mtbJC2ySURPzD_XZQ  # Nick Bencino Finance
+UCbs3kIX9ddwnDmGEo3Mwbew  # On-Chain Mind
+UCqUsV9YOCFTP8_kvBLk0K1A  # Pain of Crypto
+UC9T_qxz0g7FKhj6sXz2LKyQ  # The Jay Martin Show
+UCE_edD0qJd_EyfwGCfLHSeQ  # TheDailyGold
+UCFFJWkL-P7bfCdmBzQ9Q_YQ  # VON GREYERZ
+UCXWoMTRWJTIZwUblljo5aDQ  # Wall Street Bullion
+UCTt7JL7E3DfSClhyidGLJtw  # Wolves of Crypto
+UCytetksM6fLtke7PGAPTcOg  # ɱɛɬąʂɧąƈƙƖɛ
