@@ -16,6 +16,7 @@ import re
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -145,6 +146,52 @@ def fetch_playlists(channel_id):
     return playlists
 
 
+def fetch_playlist_videos(playlist_id):
+    """Reads the videos in one playlist (YouTube shows up to about 100 at once)."""
+    page = download(f"https://www.youtube.com/playlist?list={playlist_id}")
+    start = page.find("{", page.find("ytInitialData"))
+    data = json.JSONDecoder().raw_decode(page[start:])[0]
+
+    # YouTube uses three different layouts for playlist items, so check all of them.
+    videos = []
+    for item in find_all(data, "lockupViewModel", []):
+        if "VIDEO" in item.get("contentType", ""):
+            videos.append({
+                "id": item["contentId"],
+                "title": item["metadata"]["lockupMetadataViewModel"]["title"]["content"],
+            })
+    for item in find_all(data, "playlistVideoRenderer", []):
+        if item.get("videoId"):
+            videos.append({
+                "id": item["videoId"],
+                "title": "".join(run.get("text", "") for run in item.get("title", {}).get("runs", [])),
+            })
+    for item in find_all(data, "shortsLockupViewModel", []):
+        video_id = re.search(r'"videoId": "([\w-]{11})"', json.dumps(item))
+        if video_id:
+            videos.append({
+                "id": video_id.group(1),
+                "title": item.get("overlayMetadata", {}).get("primaryText", {}).get("content", ""),
+            })
+    return videos
+
+
+def add_playlist_videos(all_playlists):
+    """Fills in the videos of every playlist, several at a time to save time."""
+    playlists = [p for channel in all_playlists.values() for p in channel]
+
+    def fill(playlist):
+        try:
+            playlist["videos"] = fetch_playlist_videos(playlist["id"])
+        except Exception as error:
+            playlist["videos"] = []
+            print(f"     playlist '{playlist['title']}' failed ({error})")
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(fill, playlists))
+    print(f"Loaded videos for {len(playlists)} playlists.")
+
+
 def main():
     cache = json.loads(CACHE_FILE.read_text()) if CACHE_FILE.exists() else {}
     all_videos = []
@@ -171,6 +218,7 @@ def main():
                 playlist_note = f", playlists failed ({error})"
         print(f"OK   {entry}: {len(videos)} videos{playlist_note}")
 
+    add_playlist_videos(all_playlists)
     CACHE_FILE.write_text(json.dumps(cache, indent=2) + "\n")
 
     all_videos.sort(key=lambda v: v["published"], reverse=True)

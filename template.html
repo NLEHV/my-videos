@@ -36,6 +36,9 @@
     .tabs button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
     .playlist img { opacity: 1; }
     .empty { color: var(--muted); }
+    .back { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; }
+    .back button { border: 0; background: var(--card); color: var(--text); padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+    .back h3 { margin: 0; font-size: 17px; }
     .video.watched .title::before { content: "✓ "; color: var(--muted); }
   </style>
 </head>
@@ -57,6 +60,10 @@
       <button id="tab-videos" class="active">Videos</button>
       <button id="tab-playlists">Playlists</button>
     </div>
+    <div class="back" id="back" hidden>
+      <button id="back-button">← All playlists</button>
+      <h3 id="back-title"></h3>
+    </div>
     <div class="grid" id="grid"></div>
   </main>
 
@@ -66,6 +73,7 @@
     const watched = new Set(JSON.parse(localStorage.getItem("watched") || "[]"));
     let currentChannel = "All";
     let currentTab = "videos";
+    let openPlaylist = null;   // the playlist whose videos are being shown
 
     const grid = document.getElementById("grid");
     const filters = document.getElementById("filters");
@@ -88,7 +96,7 @@
         const button = document.createElement("button");
         button.textContent = name;
         button.className = name === currentChannel ? "active" : "";
-        button.onclick = () => { currentChannel = name; currentTab = "videos"; showFilters(); showVideos(); };
+        button.onclick = () => { currentChannel = name; currentTab = "videos"; openPlaylist = null; showFilters(); showVideos(); };
         filters.appendChild(button);
       }
     }
@@ -117,13 +125,35 @@
       document.getElementById("tab-videos").classList.toggle("active", currentTab === "videos");
       document.getElementById("tab-playlists").classList.toggle("active", currentTab === "playlists");
       grid.innerHTML = "";
+      document.getElementById("back").hidden = !openPlaylist;
+
+      if (openPlaylist) {
+        document.getElementById("back-title").textContent = openPlaylist.title;
+        const list = openPlaylist.videos || [];
+        if (!list.length) {
+          grid.innerHTML = '<p class="empty">The videos in this playlist could not be loaded.</p>';
+          const button = document.createElement("button");
+          button.textContent = "Play the playlist instead";
+          button.onclick = () => playPlaylist(openPlaylist);
+          grid.appendChild(button);
+        }
+        list.forEach((video, index) => {
+          const card = makeCard(
+            "https://i.ytimg.com/vi/" + video.id + "/mqdefault.jpg",
+            video.title,
+            (index + 1) + " of " + list.length,
+            watched.has(video.id) ? "watched" : "");
+          card.onclick = () => play(video, openPlaylist, index);
+        });
+        return;
+      }
 
       if (currentChannel !== "All" && currentTab === "playlists") {
         const list = playlists[currentChannel] || [];
         if (!list.length) grid.innerHTML = '<p class="empty">This channel has no playlists.</p>';
         for (const playlist of list) {
           const card = makeCard(playlist.thumb, playlist.title, playlist.count || "Playlist", "playlist");
-          card.onclick = () => playPlaylist(playlist);
+          card.onclick = () => { openPlaylist = playlist; showVideos(); window.scrollTo({ top: 0 }); };
         }
         return;
       }
@@ -146,11 +176,14 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    document.getElementById("tab-videos").onclick = () => { currentTab = "videos"; showVideos(); };
-    document.getElementById("tab-playlists").onclick = () => { currentTab = "playlists"; showVideos(); };
+    document.getElementById("tab-videos").onclick = () => { currentTab = "videos"; openPlaylist = null; showVideos(); };
+    document.getElementById("tab-playlists").onclick = () => { currentTab = "playlists"; openPlaylist = null; showVideos(); };
+    document.getElementById("back-button").onclick = () => { openPlaylist = null; showVideos(); };
 
-    function play(video) {
-      frame.src = "https://www.youtube-nocookie.com/embed/" + video.id + "?autoplay=1&rel=0";
+    function play(video, playlist, index) {
+      // When played from a playlist, the next video in it starts automatically afterwards
+      frame.src = "https://www.youtube-nocookie.com/embed/" + video.id + "?autoplay=1&rel=0"
+        + (playlist ? "&list=" + playlist.id + "&index=" + (index + 1) : "");
       document.getElementById("playing").textContent = video.title;
       player.classList.add("open");
       watched.add(video.id);
