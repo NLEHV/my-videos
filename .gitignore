@@ -1,0 +1,6 @@
+# Files that stay on this Mac only (never uploaded to GitHub)
+subscriptions.csv
+test.html
+channel_ids.json
+_site/
+.DS_Store
