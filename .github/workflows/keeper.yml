@@ -1,0 +1,40 @@
+# GitHub's "every 15 minutes" timer is unreliable (it often skips hours).
+# This job stays awake and asks for a rebuild every 15 minutes, then restarts
+# itself before GitHub's 6-hour job limit. The hourly schedule below restarts
+# it if it ever stops.
+name: Keep page fresh
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # backup: restart the keeper if it isn't running
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Stop if another keeper is already running
+        run: |
+          running=$(gh run list -w keeper.yml -s in_progress --json databaseId -q "[.[] | select(.databaseId != ${{ github.run_id }})] | length")
+          if [ "$running" != "0" ]; then echo "already running"; echo "SKIP=1" >> "$GITHUB_ENV"; fi
+      - name: Ask for a rebuild every 15 minutes
+        if: env.SKIP != '1'
+        run: |
+          for i in $(seq 1 22); do      # 22 x 15 min = 5.5 hours
+            gh workflow run build.yml || true
+            sleep 900
+          done
+      - name: Restart myself
+        if: env.SKIP != '1'
+        run: gh workflow run keeper.yml
